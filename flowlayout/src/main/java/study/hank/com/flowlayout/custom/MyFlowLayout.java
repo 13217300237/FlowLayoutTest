@@ -32,8 +32,7 @@ public class MyFlowLayout extends ViewGroup {
         init(context, attrs);
     }
 
-
-    int gravity;
+    private int gravity;
 
     private void init(Context context, AttributeSet attrs) {
         //获取自定义属性
@@ -46,7 +45,7 @@ public class MyFlowLayout extends ViewGroup {
                 ta.recycle();
         }
 
-        setClickable(true);
+        setClickable(true);//让这个viewGroup事件不穿透
     }
 
     private int defaultWidth = 100;
@@ -283,7 +282,6 @@ public class MyFlowLayout extends ViewGroup {
                 }
                 break;
         }
-
 
         return super.onTouchEvent(e);//在这里做是最好的，不会影响其他的拦截，分发神马的，最简单了
     }
