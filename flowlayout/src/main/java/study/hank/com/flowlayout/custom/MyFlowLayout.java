@@ -5,6 +5,7 @@ import android.content.res.TypedArray;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -44,12 +45,15 @@ public class MyFlowLayout extends ViewGroup {
             if (ta != null)
                 ta.recycle();
         }
+
+        setClickable(true);
     }
 
     private int defaultWidth = 100;
     private int defaultHeight = 100;
 
     private int finalW = 0, finalH = 0;//自身宽高，最终会setMeasureDimension保存起来
+    private int parentMaxHeight;
 
     private int currentRowWidth;// 临时变量，当前行的宽度，用于辅助计算我的宽度
     private int currentRowHeight = 0;//临时变量，当前行的高度
@@ -89,6 +93,8 @@ public class MyFlowLayout extends ViewGroup {
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);//这个size其实就是父容器的高
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
 
+        parentMaxHeight = heightSize;
+
         final int childCount = getChildCount();
         if (childCount == 0)//当没有子view时，为了表示这里有一个FlowLayout，给个默认宽高呀
             setDefaultSize(widthMode, widthSize, heightMode, heightSize);
@@ -127,17 +133,16 @@ public class MyFlowLayout extends ViewGroup {
             currentRowWidth += childWidthWithMargins;//然后再累加
             currentRowHeight = Math.max(currentRowHeight, childHeightWidthMargins); //当前行的高度，取大
 
-            //如果循环到了最后一个view，那就直接进行保存
+            //如果循环到了最后一个view，那就直接进行保存最后一行
             if (i == childCount - 1) {
                 saveParams();
                 finalH += paddingTop + paddingBottom;//测量最后一个子view的时候，padding 矫正
                 finalW += paddingLeft + paddingRight;//padding 矫正
             }
-
         }
 
         setMeasuredDimension(finalW, finalH);//
-
+        initCanScrollY();//测量完成之后，Y方向能够滑动的最大距离也就确定了
     }
 
     private void saveParams() {
@@ -228,5 +233,66 @@ public class MyFlowLayout extends ViewGroup {
             yOffset += rowHeights.get(i);//Y偏移量，按行高增量，行高已经考虑了topMargin和bottomMargin
         }
 
+    }
+
+    int y;
+
+    //拖动事件处理
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        switch (e.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                y = (int) e.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                final int thisY = (int) e.getY();
+                int scrollY = -(thisY - y);
+                // scrollY 向下，正，向上，负。
+                y = thisY;
+
+                boolean ifAllowSwipe = true;
+                //getScrollY 是负数时，不允许向下滑动
+                if (getScrollY() <= 0) {
+                    if (scrollY < 0) {//手指向下，scrollY为负数
+                        ifAllowSwipe = false;//那就不允许滑动
+                    }
+                } else {//为正数时，如果 已滑动的Y距离 超过了可滑动的最大高度，也不允许滑动
+                    if (getScrollY() > canScrollY)//如果已经超出了下边界
+                        if (scrollY > 0)//手指向上，scrollY为正数;
+                            ifAllowSwipe = false;//那就不允许滑动
+                }
+
+                //当滑动速度足够快的时候，e.getY 会 比原来的y大很多，即  滑动距离会很大
+                Log.d("action_move", "" + scrollY + "  " + getScrollY() + "  " + getMeasuredHeight());
+                if (ifAllowSwipe)
+                    scrollBy(0, scrollY);
+
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                //这里可以加一个回弹，如果scrollY超过了可滑动的范围，则进行scrollBy回弹
+                int thisScrollY = getScrollY();
+                if (thisScrollY < 0) {//上面已经越界了
+                    int deltaY = -thisScrollY;
+                    scrollBy(0, deltaY);
+                } else {//正数的情况
+                    if (thisScrollY > canScrollY) {
+                        int delta = -(thisScrollY - canScrollY);
+                        scrollBy(0, delta);
+                    }
+                }
+                break;
+        }
+
+
+        return super.onTouchEvent(e);//在这里做是最好的，不会影响其他的拦截，分发神马的，最简单了
+    }
+
+    private int canScrollY;
+
+    private void initCanScrollY() {
+        canScrollY = getMeasuredHeight() - parentMaxHeight;
+        if (canScrollY < 0)
+            canScrollY = 0;
     }
 }
