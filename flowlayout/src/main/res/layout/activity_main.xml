@@ -17,13 +17,13 @@
         <Button
             style="@style/flow"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:text="一条大菜狗" />
 
         <Button
             style="@style/flow"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:text="两行白鹭上西天" />
 
         <Button
