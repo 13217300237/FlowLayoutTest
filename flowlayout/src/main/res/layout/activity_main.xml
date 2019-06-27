@@ -16,53 +16,46 @@
 
         <Button
             style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="宽高都wrap_content" />
+
+        <Button
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:text="高300dp，宽matchParent" />
+
+        <Button
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="width是 match_Parent, 高wrap_content" />
+
+        <Button
+            style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_margin="10dp"
-            android:text="我是 match_Parent" />
+            android:text="宽高都是 match_Parent(宽给最终行宽，高给默认值)" />
 
 
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:text="我是 match_Parent" />-->
+        <Button
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="两行白鹭上西天" />
 
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:text="两行白鹭上西天" />-->
+        <Button
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="200dp"
+            android:text="高200dp，宽wrapContent" />
 
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:text="我是 match_Parent" />-->
-
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="200dp"-->
-        <!--android:text="高200dp，宽matchParent" />-->
-
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="match_parent"-->
-        <!--android:text="两行白鹭上西天" />-->
-
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="200dp"-->
-        <!--android:text="高200dp，宽wrapContent" />-->
-
-        <!--<Button-->
-        <!--style="@style/flow"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:text="我是最后一个" />-->
+        <Button
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="我是最后一个, 宽高是wrap_content" />
 
     </study.hank.com.flowlayout.custom.MyFlowLayout>
 </android.support.constraint.ConstraintLayout>

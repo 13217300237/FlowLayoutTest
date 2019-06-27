@@ -50,8 +50,8 @@ public class MyFlowLayout extends ViewGroup {
         setClickable(true);//让这个viewGroup事件不穿透
     }
 
-    private int defaultWidth = Utils.dp2px(100);
-    private int defaultHeight = Utils.dp2px(100);
+    private int defaultWidth = Utils.dp2px(200);
+    private int defaultHeight = Utils.dp2px(200);
 
     private int finalW = 0, finalH = 0;//自身宽高，最终会setMeasureDimension保存起来
     private int parentMaxHeight;
@@ -122,9 +122,11 @@ public class MyFlowLayout extends ViewGroup {
             Log.d(TAG + "_measure", "" + lp.width);
             //测量，决定自己宽度的时候就要考虑leftMargin和rightMargin
 
-            boolean ifMatchParent = lp.width == LayoutParams.MATCH_PARENT;
+            boolean ifWidthMatchParent = lp.width == LayoutParams.MATCH_PARENT;
+            boolean ifHeightMatchParent = lp.height == LayoutParams.MATCH_PARENT;
+            // 如果高度是沾满呢，现在系统默认的效果是，好像是搞成了wrap_content测量的，那如果我非要给她设定一个默认高呢？
 
-            if (!ifMatchParent)//如果宽度是matchParent，则这次不与测量，改在后面测
+            if (!ifWidthMatchParent && !ifHeightMatchParent)//如果宽度是matchParent，则这次不与测量，改在后面测
                 measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);//测量子view，测量之后，子view就有了自己的宽高
             int childWidth = child.getMeasuredWidth();
             int childHeight = child.getMeasuredHeight();
@@ -146,7 +148,7 @@ public class MyFlowLayout extends ViewGroup {
             if (ifOverLineMaxWidth) {//预测view加进去之后，此行的宽，如果超过了最大值，就保存当前行，重置当前行的辅助参数
                 saveCurrentRow();
             }
-            if (ifMatchParent) {//如果当前view是宽matchParent，那就单独直接换行
+            if (ifWidthMatchParent) {//如果当前view是宽matchParent，那就单独直接换行
                 saveCurrentRow();//这里可能会保存空行，因为如果还没有add到currentRowViews中
                 //这里换行，是考虑到（当前行已经有元素了，但是下一个view是matchParent，那么就不能让它呆在这一行）
             }
@@ -156,9 +158,9 @@ public class MyFlowLayout extends ViewGroup {
             currentRowWidth += childWidthWithMargins;//宽度递增
             currentRowHeight = Math.max(currentRowHeight, childHeightWidthMargins); //当前行的高度，取大
 
-            if (ifMatchParent) {//如果在把view加到 currentRowViews之后，发现它是matchParent，那就换行
+            if (ifWidthMatchParent) {//如果在把view加到 currentRowViews之后，发现它是matchParent，那就换行
                 saveCurrentRow();
-            }//因为，
+            }
 
             //如果循环到了最后一个view，那就直接进行保存最后一行
             if (i == childCount - 1) {
@@ -177,12 +179,27 @@ public class MyFlowLayout extends ViewGroup {
             List<View> currentRow = totalViews.get(i);
             Log.d("currentRowTag", "第" + i + "行:" + currentRow.size());
             //找出一行只有一个view的行，对它进行测量
-            if (currentRow.size() == 1) {
-                View v = currentRow.get(0);
+            for (int j = 0; j < currentRow.size(); j++) {
+                View v = currentRow.get(j);
                 MarginLayoutParams lpT = (MarginLayoutParams) v.getLayoutParams();
-                if (lpT.width == LayoutParams.MATCH_PARENT) {
+                if (lpT.width == LayoutParams.MATCH_PARENT && lpT.height == LayoutParams.MATCH_PARENT) {//如果宽高都是matchParent呢？
                     int wms = MeasureSpec.makeMeasureSpec(finalW - lpT.leftMargin - lpT.rightMargin, MeasureSpec.EXACTLY);
-                    int hms = MeasureSpec.makeMeasureSpec(heightSize, lpT.height);
+                    int hms = MeasureSpec.makeMeasureSpec(defaultHeight, MeasureSpec.EXACTLY);
+                    v.measure(wms, hms);
+                } else if (lpT.width == LayoutParams.MATCH_PARENT) {//只有宽matchParent
+                    int wms = MeasureSpec.makeMeasureSpec(finalW - lpT.leftMargin - lpT.rightMargin, MeasureSpec.EXACTLY);
+                    int hms;
+                    if (lpT.height > 0)// 大于0,说明是精确值,直接设置即可
+                        hms = MeasureSpec.makeMeasureSpec(lpT.height, MeasureSpec.EXACTLY);//宽matchParent，高200dp的情况下，这里的size
+                    else {//否则就是wrap_content或者matchParent
+                        hms = getChildMeasureSpec(heightMeasureSpec,
+                                paddingTop + paddingBottom + lpT.topMargin + lpT.bottomMargin, lpT.height);//使用系统方法
+                    }
+
+                    v.measure(wms, hms);
+                } else if (lpT.height == LayoutParams.MATCH_PARENT) {//只有高是matchParent
+                    int wms = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.AT_MOST);
+                    int hms = MeasureSpec.makeMeasureSpec(defaultHeight, MeasureSpec.EXACTLY);
                     v.measure(wms, hms);
                 }
             }
