@@ -19,6 +19,8 @@ import study.hank.com.flowlayout.R;
  */
 public class MyFlowLayout extends ViewGroup {
 
+    private static final String TAG = "MyFlowLayoutTag";
+
     public MyFlowLayout(Context context) {
         this(context, null);
     }
@@ -48,8 +50,8 @@ public class MyFlowLayout extends ViewGroup {
         setClickable(true);//让这个viewGroup事件不穿透
     }
 
-    private int defaultWidth = 100;
-    private int defaultHeight = 100;
+    private int defaultWidth = Utils.dp2px(100);
+    private int defaultHeight = Utils.dp2px(100);
 
     private int finalW = 0, finalH = 0;//自身宽高，最终会setMeasureDimension保存起来
     private int parentMaxHeight;
@@ -75,6 +77,13 @@ public class MyFlowLayout extends ViewGroup {
         return new MarginLayoutParams(getContext(), attrs);
     }
 
+    /**
+     * 多次对子进行测量，来兼容子view match_parent的情况，如果宽match_parent，则自己占据一行
+     * 如果高match_parent，则给默认高度
+     *
+     * @param widthMeasureSpec
+     * @param heightMeasureSpec
+     */
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {//子自身的限制条件MeasureSpec
 
@@ -104,15 +113,19 @@ public class MyFlowLayout extends ViewGroup {
         final int maxHeight = heightSize;
 
         //拿到了size和mode，现在来测量子
-
+        int maxChildLeftRightMargin = 0;
         for (int i = 0; i < childCount; i++) {
             View child = getChildAt(i);
 
             //现在的问题时如何取得子的margin
             MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+            Log.d(TAG + "_measure", "" + lp.width);
             //测量，决定自己宽度的时候就要考虑leftMargin和rightMargin
 
-            measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);//测量子view，测量之后，子view就有了自己的宽高
+            boolean ifMatchParent = lp.width == LayoutParams.MATCH_PARENT;
+
+            if (!ifMatchParent)//如果宽度是matchParent，则这次不与测量，改在后面测
+                measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);//测量子view，测量之后，子view就有了自己的宽高
             int childWidth = child.getMeasuredWidth();
             int childHeight = child.getMeasuredHeight();
 
@@ -124,32 +137,73 @@ public class MyFlowLayout extends ViewGroup {
             final int childWidthWithMargins = childWidth + lp.leftMargin + lp.rightMargin;
             final int childHeightWidthMargins = childHeight + lp.topMargin + lp.bottomMargin;
 
+            maxChildLeftRightMargin = Math.max(lp.leftMargin + lp.rightMargin, maxChildLeftRightMargin);
+
+            //发现，match_parent是-1，那就判断是不是-1，如果是-1，则直接换行
+
+            boolean ifOverLineMaxWidth = currentRowWidth + childWidthWithMargins + paddingLeft + paddingRight > maxWidth;
             //制定规则：放置一个child的时候，检查currentRowWidth加上childWidth有没有大于maxWidth，如果没有大于，那就在当前行的list中加上这个子view
-            if (currentRowWidth + childWidthWithMargins + paddingLeft + paddingRight > maxWidth) {//判定是否要换行,这里确定要换行之后，把当前行，totalViews.add保存起来,那最后一行呢？也要存起来啊
-                saveParams();
+            if (ifOverLineMaxWidth) {//预测view加进去之后，此行的宽，如果超过了最大值，就保存当前行，重置当前行的辅助参数
+                saveCurrentRow();
             }
-            currentRowViews.add(child);
-            currentRowWidth += childWidthWithMargins;//然后再累加
+            if (ifMatchParent) {//如果当前view是宽matchParent，那就单独直接换行
+                saveCurrentRow();//这里可能会保存空行，因为如果还没有add到currentRowViews中
+                //这里换行，是考虑到（当前行已经有元素了，但是下一个view是matchParent，那么就不能让它呆在这一行）
+            }
+
+            //在当前行里面增加一个子view
+            currentRowViews.add(child);//当前行，增加一个子
+            currentRowWidth += childWidthWithMargins;//宽度递增
             currentRowHeight = Math.max(currentRowHeight, childHeightWidthMargins); //当前行的高度，取大
+
+            if (ifMatchParent) {//如果在把view加到 currentRowViews之后，发现它是matchParent，那就换行
+                saveCurrentRow();
+            }//因为，
 
             //如果循环到了最后一个view，那就直接进行保存最后一行
             if (i == childCount - 1) {
-                saveParams();
+                saveCurrentRow();
                 finalH += paddingTop + paddingBottom;//测量最后一个子view的时候，padding 矫正
                 finalW += paddingLeft + paddingRight;//padding 矫正
             }
         }
 
+        //再考虑一个情况，如果你全都是matchParent的view呢？那就给一个默认值，
+        if (finalW == paddingLeft + paddingRight + maxChildLeftRightMargin)
+            finalW = defaultWidth + paddingLeft + paddingRight;
+
+        //遍历所有行列中的行
+        for (int i = 0; i < totalViews.size(); i++) {
+            List<View> currentRow = totalViews.get(i);
+            Log.d("currentRowTag", "第" + i + "行:" + currentRow.size());
+            //找出一行只有一个view的行，对它进行测量
+            if (currentRow.size() == 1) {
+                View v = currentRow.get(0);
+                MarginLayoutParams lpT = (MarginLayoutParams) v.getLayoutParams();
+                if (lpT.width == LayoutParams.MATCH_PARENT) {
+                    int wms = MeasureSpec.makeMeasureSpec(finalW - lpT.leftMargin - lpT.rightMargin, MeasureSpec.EXACTLY);
+                    int hms = MeasureSpec.makeMeasureSpec(heightSize, lpT.height);
+                    v.measure(wms, hms);
+                }
+            }
+        }
+        Log.d("currentRowTag", "===============" + finalW);//
+
         setMeasuredDimension(finalW, finalH);//
         initCanScrollY();//测量完成之后，Y方向能够滑动的最大距离也就确定了
     }
 
-    private void saveParams() {
+    /**
+     * 保存当前行
+     */
+    private void saveCurrentRow() {
         finalW = Math.max(currentRowWidth, finalW);//当前值，和刚刚换行之前的宽，取大
-        totalViews.add(currentRowViews);// 把换的那个行存起来
-        rowHeights.add(currentRowHeight);
-        finalH += currentRowHeight;// 对行高进行累加
-        Log.d("saveParams", finalH + "    " + currentRowHeight);
+        if (currentRowViews.size() > 0) {
+            totalViews.add(currentRowViews);// 把换的那个行存起来
+            rowHeights.add(currentRowHeight);
+            finalH += currentRowHeight;// 对行高进行累加
+        }
+        Log.d("saveCurrentRow", finalH + "    " + currentRowHeight);
         resetTempFields();
     }
 
@@ -236,7 +290,7 @@ public class MyFlowLayout extends ViewGroup {
 
     int y;
 
-    //拖动事件处理
+    //滑动事件处理
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         switch (e.getAction()) {
@@ -244,49 +298,33 @@ public class MyFlowLayout extends ViewGroup {
                 y = (int) e.getY();
                 break;
             case MotionEvent.ACTION_MOVE:
-                final int thisY = (int) e.getY();
-                int scrollY = -(thisY - y);
-                // scrollY 向下，正，向上，负。
-                y = thisY;
+                final int thisY = (int) e.getY();//本次event的Y值
+                //假设此次是手指向上滑动，那么y-thisY 是正数
+                int deltaY = thisY - y;//差值 就是即将scrollBy的距离
 
-                boolean ifAllowSwipe = true;
-                //getScrollY 是负数时，不允许向下滑动
-                if (getScrollY() <= 0) {
-                    if (scrollY < 0) {//手指向下，scrollY为负数
-                        ifAllowSwipe = false;//那就不允许滑动
-                    }
-                } else {//为正数时，如果 已滑动的Y距离 超过了可滑动的最大高度，也不允许滑动
-                    if (getScrollY() > canScrollY)//如果已经超出了下边界
-                        if (scrollY > 0)//手指向上，scrollY为正数;
-                            ifAllowSwipe = false;//那就不允许滑动
+                //  预测scrollBy之后的getScrollY值,并且进行边界矫正
+                int targetY = getScrollY() - deltaY;// 预测已滑动的距离
+                if (targetY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
+                    Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为0 ");
+                    targetY = 0;
+                } else if (targetY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
+                    targetY = canScrollY;
+                    Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
+                } else {
+                    Log.d(TAG, "正常范围内滑动，不做特殊处理");
                 }
-
-                //当滑动速度足够快的时候，e.getY 会 比原来的y大很多，即  滑动距离会很大
-                Log.d("action_move", "" + scrollY + "  " + getScrollY() + "  " + getMeasuredHeight());
-                if (ifAllowSwipe)
-                    scrollBy(0, scrollY);
-
+                scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
+                y = thisY;//更新Y
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
-                //这里可以加一个回弹，如果scrollY超过了可滑动的范围，则进行scrollBy回弹
-                int thisScrollY = getScrollY();
-                if (thisScrollY < 0) {//上面已经越界了
-                    int deltaY = -thisScrollY;
-                    scrollBy(0, deltaY);
-                } else {//正数的情况
-                    if (thisScrollY > canScrollY) {
-                        int delta = -(thisScrollY - canScrollY);
-                        scrollBy(0, delta);
-                    }
-                }
                 break;
         }
 
         return super.onTouchEvent(e);//在这里做是最好的，不会影响其他的拦截，分发神马的，最简单了
     }
 
-    private int canScrollY;
+    private int canScrollY;// 允许滑动的最大距离
 
     private void initCanScrollY() {
         canScrollY = getMeasuredHeight() - parentMaxHeight;
