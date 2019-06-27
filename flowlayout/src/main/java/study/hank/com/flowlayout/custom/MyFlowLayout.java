@@ -2,12 +2,15 @@ package study.hank.com.flowlayout.custom;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.support.v4.view.ViewConfigurationCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.widget.Scroller;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +38,7 @@ public class MyFlowLayout extends ViewGroup {
     }
 
     private int gravity;
+    private Scroller mScroller;// 实现平滑滑动的核心类,不过这个类只负责计算每一小段平滑滑动的距离,真正去scroll，还是要我自己的scrollTo
 
     private void init(Context context, AttributeSet attrs) {
         //获取自定义属性
@@ -48,16 +52,20 @@ public class MyFlowLayout extends ViewGroup {
         }
 
         setClickable(true);//让这个viewGroup事件不穿透
+        ViewConfiguration configuration = ViewConfiguration.get(context);
+        mTouchSlop = ViewConfigurationCompat.getScaledPagingTouchSlop(configuration);
+        mScroller = new Scroller(context);
     }
 
     private int defaultWidth = Utils.dp2px(200);
-    private int defaultHeight = Utils.dp2px(200);
+    private int defaultHeight = Utils.dp2px(100);
 
     private int finalW = 0, finalH = 0;//自身宽高，最终会setMeasureDimension保存起来
     private int parentMaxHeight;
 
     private int currentRowWidth;// 临时变量，当前行的宽度，用于辅助计算我的宽度
     private int currentRowHeight = 0;//临时变量，当前行的高度
+
 
     //用二维数组保存每行每列上的子view
     List<View> currentRowViews;//临时保存行
@@ -75,6 +83,117 @@ public class MyFlowLayout extends ViewGroup {
     @Override
     public LayoutParams generateLayoutParams(AttributeSet attrs) {
         return new MarginLayoutParams(getContext(), attrs);
+    }
+
+
+    int mTouchSlop = 0;
+    int mLastInterceptX = 0;
+    int mLastInterceptY = 0;
+
+    /**
+     * 目标：所有纵向滑动由我自己处理。down不拦截，
+     *
+     * @param ev
+     * @return
+     */
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        boolean ifIntercept = false;
+        int interceptX = 0;
+        int interceptY = 0;
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                mLastInterceptX = (int) ev.getY();
+                mLastInterceptY = (int) ev.getY();
+                ifIntercept = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                int dx = interceptX - mLastInterceptX;
+                int dy = interceptY - mLastInterceptY;
+                if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > mTouchSlop) {//纵向滑动并且滑动距离大于TouchSlop
+                    ifIntercept = true;//一旦拦截，此次event序列就会交给自身的onTouchEvent处理
+                } else {
+                    ifIntercept = false;//不拦截，就让下一层收到event，它来决定是否消费，如果消费，则我的onTouchEvent不执行，不消费，则我的onTouchEvent执行
+                }
+                break;
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                ifIntercept = false;
+                break;
+        }
+        mLastInterceptX = interceptX;
+        mLastInterceptY = interceptY;
+        return ifIntercept;
+    }
+
+    int touchY;
+
+    //滑动事件处理
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        switch (e.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                if (!mScroller.isFinished()) {
+                    mScroller.abortAnimation();//如果上一次滑动还没完成，又有了新的down，那么就结束上次滑动
+                }
+                touchY = (int) e.getY();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                final int thisY = (int) e.getY();//本次event的Y值
+                //假设此次是手指向上滑动，那么y-thisY 是正数
+                int deltaY = thisY - touchY;//差值 就是即将scrollBy的距离
+
+                // *********** 使用scrollTo直接滑动 不带惯性，不带速度侦测 **************
+//                //  预测scrollBy之后的getScrollY值,并且进行边界矫正
+//                int targetY = getScrollY() - deltaY;// 预测已滑动的距离
+//                if (targetY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
+//                    Log.d(TAG, "targetY 预测结果，上方边界即将越界，强制纠正为0 ");
+//                    targetY = 0;
+//                } else if (targetY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
+//                    targetY = canScrollY;
+//                    Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
+//                } else {
+//                    Log.d(TAG, "正常范围内滑动，不做特殊处理");
+//                }
+//                scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
+
+                //*******************  使用Scroller去滑动，支持惯性，和速度侦测  ********************
+
+                //这个是没有平滑移动以及惯性效果的scrolTo，现在我换成
+                mScroller.startScroll(0, mScroller.getFinalY(), 0, -deltaY);//从哪到哪！Y 要从哪到哪呢？
+                // 手指上滑，内容也会上滑，这时候的deltaY应该是负数, 而scrollTo上滑的时候，targetY是小于startY的,scrollTo滑动的是内容，但是
+                //这个mScroller它是滑动的内容，所以不能用原值，要用相反数,艹，我就知道这里比较坑
+
+                invalidate();//刷新，会触发我的 draw,draw中执行了computeScroll
+
+                touchY = thisY;//更新Y
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                break;
+        }
+
+        return super.onTouchEvent(e);
+    }
+
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+        if (mScroller.computeScrollOffset()) {//计算是否还有滑动偏移量,  true  有， false 没有
+            int currY = mScroller.getCurrY();//本次微分滑动的目标位置
+            if (currY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
+                Log.d(TAG, "targetY 预测结果，上方边界即将越界，强制纠正为0 ");
+                currY = 0;
+            } else if (currY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
+                currY = canScrollY;
+                Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
+            } else {
+                Log.d(TAG, "正常范围内滑动，不做特殊处理");
+            }
+
+            scrollTo(0, currY);
+            postInvalidate();// 利用handler，将本次刷新加入到事件序列，依次执行
+        }
     }
 
     /**
@@ -174,7 +293,18 @@ public class MyFlowLayout extends ViewGroup {
         if (finalW == paddingLeft + paddingRight + maxChildLeftRightMargin)
             finalW = defaultWidth + paddingLeft + paddingRight;
 
-        //遍历所有行列中的行
+        reMeasureChildren(widthMeasureSpec, heightMeasureSpec, widthSize);
+        setMeasuredDimension(finalW, finalH);//
+        initCanScrollY();//测量完成之后，Y方向能够滑动的最大距离也就确定了
+    }
+
+    /**
+     * 重新测量，针对出现宽高为match_parent的情况(因为上面的测量，没有对类进行处理)
+     *
+     * @param heightMeasureSpec
+     * @param widthSize
+     */
+    private void reMeasureChildren(int widthMeasureSpec, int heightMeasureSpec, int widthSize) {
         for (int i = 0; i < totalViews.size(); i++) {
             List<View> currentRow = totalViews.get(i);
             Log.d("currentRowTag", "第" + i + "行:" + currentRow.size());
@@ -182,33 +312,41 @@ public class MyFlowLayout extends ViewGroup {
             for (int j = 0; j < currentRow.size(); j++) {
                 View v = currentRow.get(j);
                 MarginLayoutParams lpT = (MarginLayoutParams) v.getLayoutParams();
-                if (lpT.width == LayoutParams.MATCH_PARENT && lpT.height == LayoutParams.MATCH_PARENT) {//如果宽高都是matchParent呢？
+                if (lpT.width == LayoutParams.MATCH_PARENT && lpT.height == LayoutParams.MATCH_PARENT) {
+                    //如果宽高都是matchParent呢,宽，设定为行宽
                     int wms = MeasureSpec.makeMeasureSpec(finalW - lpT.leftMargin - lpT.rightMargin, MeasureSpec.EXACTLY);
+                    //高，设定为默认值
                     int hms = MeasureSpec.makeMeasureSpec(defaultHeight, MeasureSpec.EXACTLY);
                     v.measure(wms, hms);
                 } else if (lpT.width == LayoutParams.MATCH_PARENT) {//只有宽matchParent
+                    //只有宽是matchParent，则，宽设定为
                     int wms = MeasureSpec.makeMeasureSpec(finalW - lpT.leftMargin - lpT.rightMargin, MeasureSpec.EXACTLY);
                     int hms;
                     if (lpT.height > 0)// 大于0,说明是精确值,直接设置即可
                         hms = MeasureSpec.makeMeasureSpec(lpT.height, MeasureSpec.EXACTLY);//宽matchParent，高200dp的情况下，这里的size
                     else {//否则就是wrap_content或者matchParent
                         hms = getChildMeasureSpec(heightMeasureSpec,
-                                paddingTop + paddingBottom + lpT.topMargin + lpT.bottomMargin, lpT.height);//使用系统方法
+                                getPaddingTop() + getPaddingBottom() + lpT.topMargin + lpT.bottomMargin, lpT.height);//使用系统方法
                     }
 
                     v.measure(wms, hms);
-                } else if (lpT.height == LayoutParams.MATCH_PARENT) {//只有高是matchParent
-                    int wms = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.AT_MOST);
+                } else if (lpT.height == LayoutParams.MATCH_PARENT) {//只有高是matchParent,那就把matchParent设定一个默认值，宽度则按照它自身的处理
+                    int wms;
+                    if (lpT.width > 0)// 大于0,说明是精确值,直接设置即可
+                        wms = MeasureSpec.makeMeasureSpec(lpT.width, MeasureSpec.EXACTLY);//宽matchParent，高200dp的情况下，这里的size
+                    else {//否则就是wrap_content或者matchParent
+                        wms = getChildMeasureSpec(widthMeasureSpec,
+                                getPaddingLeft() + getPaddingRight() + lpT.leftMargin + lpT.rightMargin, lpT.width);//使用系统方法
+                    }
                     int hms = MeasureSpec.makeMeasureSpec(defaultHeight, MeasureSpec.EXACTLY);
                     v.measure(wms, hms);
+                    //为什么你单独在一行?我只是让你的高matchParent,没道理,其实没有··
                 }
             }
         }
         Log.d("currentRowTag", "===============" + finalW);//
-
-        setMeasuredDimension(finalW, finalH);//
-        initCanScrollY();//测量完成之后，Y方向能够滑动的最大距离也就确定了
     }
+
 
     /**
      * 保存当前行
@@ -305,41 +443,6 @@ public class MyFlowLayout extends ViewGroup {
 
     }
 
-    int y;
-
-    //滑动事件处理
-    @Override
-    public boolean onTouchEvent(MotionEvent e) {
-        switch (e.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                y = (int) e.getY();
-                break;
-            case MotionEvent.ACTION_MOVE:
-                final int thisY = (int) e.getY();//本次event的Y值
-                //假设此次是手指向上滑动，那么y-thisY 是正数
-                int deltaY = thisY - y;//差值 就是即将scrollBy的距离
-
-                //  预测scrollBy之后的getScrollY值,并且进行边界矫正
-                int targetY = getScrollY() - deltaY;// 预测已滑动的距离
-                if (targetY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
-                    Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为0 ");
-                    targetY = 0;
-                } else if (targetY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
-                    targetY = canScrollY;
-                    Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
-                } else {
-                    Log.d(TAG, "正常范围内滑动，不做特殊处理");
-                }
-                scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
-                y = thisY;//更新Y
-                break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                break;
-        }
-
-        return super.onTouchEvent(e);//在这里做是最好的，不会影响其他的拦截，分发神马的，最简单了
-    }
 
     private int canScrollY;// 允许滑动的最大距离
 
