@@ -487,36 +487,53 @@ public class MyFlowLayout extends ViewGroup {
             }
 
             // 开始 fling
-            mScroller.fling(0, initY, 0,
-                    velocityY, 0, 0, 0, maxY);
-            post(this);
+            mScroller.fling(0, initY, 0, velocityY, 0, 0, 0, maxY);
+            //***************  fling 方法，只是为了 保存一系列参数值，******************
+            //** 从左到右依次是 "x初始值"，"y初始值"，"x方向速度"，"y方向速度"，"x最小边界值"，"x最大边界值"，"y最小边界值"，"y最大边界值"  **
+            post(this);//this是一个Runnable对象，post就是利用View.post(runnable)来执行runnable的run方法
         }
 
+        /**
+         * Scroller的作用原理：
+         * 常用方法  startScroll() 平滑移动  fling() 带惯性的平滑移动
+         * 但是这两个方法，你如果进去看，它只是保存了一系列参数值而已，并没有主动去 让view发生变化（很容易理解，new Scroller的时候并没有传view）
+         * ，其中有一个重要参数，就是  mStartTime = AnimationUtils.currentAnimationTimeMillis();
+         * 它利用AnimationUtils类的方法，获得一个当前时间。
+         * <p>
+         * 要想让view发生变化，滚动。必须调用scroller.computeScrollOffset
+         * 这个方法，将会计算时间差值，从而 改变currX或currY的值（这两个值，其实是本次滚动的预计目标位置坐标值），
+         * 在我们调用了scroll.computeScrollOffset之后，就能利用 scroller.getCurrY 获得 y方向上本次滚动的目标位置
+         * 但是现在还没有滑动（强调！）
+         * scroller.getCurrY 得到的这个值，只是预测值， 不代表我们最重要滑动的距离，因为涉及到滑动边界的问题，我们可以对这个值进行边界矫正
+         * <p>
+         * 矫正之后，我们调用view的scrollTo或者scrollBy来操作view本身的滚动。
+         * <p>
+         * （强调!）
+         * 然后！ 重复调用上面 Scroller.computeScrollOffset之后的过程，直到滚动达到目标!
+         * <p>
+         * 是的，Scroller的套路就是这样，Scroller类只负责计算，
+         * <p>
+         * ((((我们要调用它的computeScrollOffset之后，在getCurrY获得预计偏移量，然后边界矫正，))))
+         * 然后 重复括号里的内容, 直到达到目标位置.
+         * <p>
+         * 这个听上去有点像while循环有米有！
+         */
         @Override
         public void run() {
 
             // 如果已经结束，就不再进行
-            if (!mScroller.computeScrollOffset()) {
+            if (!mScroller.computeScrollOffset()) {//上面执行了fling参数，其中有一个重要参数（要去看源码内部 ）.
                 return;
             }
 
             // 计算偏移量
             int currY = mScroller.getCurrY();//先保存当前滚动的距离
-            int diffY = mInitY - currY;//初始位置和当前位置的差值
-
-            Log.i(TAG, "run: [currY: " + currY + "]"
-                    + "[diffY: " + diffY + "]"
-                    + "[initY: " + mInitY + "]"
-                    + "[minY: " + mMinY + "]"
-                    + "[maxY: " + mMaxY + "]"
-                    + "[velocityY: " + mVelocityY + "]"
-            );
+            int diffY = mInitY - currY;//初始位置和当前位置的差值（因为后面使用的是scrollBy，所以要计算差值）
 
             // 用于记录是否超出边界，如果已经超出边界，则不再进行回调，即使滚动还没有完成
-            boolean isEnd = false;
+            boolean isEnd = false;// 是否滚动结束
 
             if (diffY != 0) {
-
                 // 超出下边界，进行修正
                 if (getScrollY() + diffY >= canScrollY) {
                     diffY = (canScrollY - getScrollY());
