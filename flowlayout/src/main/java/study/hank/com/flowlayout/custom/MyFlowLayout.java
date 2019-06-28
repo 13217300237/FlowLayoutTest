@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
@@ -23,6 +24,12 @@ import study.hank.com.flowlayout.R;
 public class MyFlowLayout extends ViewGroup {
 
     private static final String TAG = "MyFlowLayoutTag";
+    private ViewConfiguration viewConfiguration;
+    private int mMaximumVelocity, mMinimumVelocity;
+    /**
+     * 惯性滑动线程
+     */
+    private FlingRunnable mFlingRunnable;
 
     public MyFlowLayout(Context context) {
         this(context, null);
@@ -38,7 +45,7 @@ public class MyFlowLayout extends ViewGroup {
     }
 
     private int gravity;
-    private Scroller mScroller;// 实现平滑滑动的核心类,不过这个类只负责计算每一小段平滑滑动的距离,真正去scroll，还是要我自己的scrollTo
+    private VelocityTracker mVelocityTracker = null;//速度追踪器
 
     private void init(Context context, AttributeSet attrs) {
         //获取自定义属性
@@ -52,9 +59,12 @@ public class MyFlowLayout extends ViewGroup {
         }
 
         setClickable(true);//让这个viewGroup事件不穿透
-        ViewConfiguration configuration = ViewConfiguration.get(context);
-        mTouchSlop = ViewConfigurationCompat.getScaledPagingTouchSlop(configuration);
-        mScroller = new Scroller(context);
+        viewConfiguration = ViewConfiguration.get(context);
+        mTouchSlop = ViewConfigurationCompat.getScaledPagingTouchSlop(viewConfiguration);
+
+        mMaximumVelocity = ViewConfiguration.get(context).getScaledMaximumFlingVelocity();
+        mMinimumVelocity = ViewConfiguration.get(context).getScaledMinimumFlingVelocity();
+        mFlingRunnable = new FlingRunnable(context);
     }
 
     private int defaultWidth = Utils.dp2px(200);
@@ -84,7 +94,6 @@ public class MyFlowLayout extends ViewGroup {
     public LayoutParams generateLayoutParams(AttributeSet attrs) {
         return new MarginLayoutParams(getContext(), attrs);
     }
-
 
     int mTouchSlop = 0;
     int mLastInterceptX = 0;
@@ -127,48 +136,49 @@ public class MyFlowLayout extends ViewGroup {
     }
 
     int touchY;
+    private MotionEvent mMoveDownEvent;
+
 
     //滑动事件处理
     @Override
     public boolean onTouchEvent(MotionEvent e) {
+        if (mVelocityTracker == null) {
+            mVelocityTracker = VelocityTracker.obtain();
+        }
+        mVelocityTracker.addMovement(e);
         switch (e.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                if (!mScroller.isFinished()) {
-                    mScroller.abortAnimation();//如果上一次滑动还没完成，又有了新的down，那么就结束上次滑动
-                }
                 touchY = (int) e.getY();
+                mFlingRunnable.stop();
                 break;
             case MotionEvent.ACTION_MOVE:
                 final int thisY = (int) e.getY();//本次event的Y值
                 //假设此次是手指向上滑动，那么y-thisY 是正数
                 int deltaY = thisY - touchY;//差值 就是即将scrollBy的距离
-
-                // *********** 使用scrollTo直接滑动 不带惯性，不带速度侦测 **************
-//                //  预测scrollBy之后的getScrollY值,并且进行边界矫正
-//                int targetY = getScrollY() - deltaY;// 预测已滑动的距离
-//                if (targetY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
-//                    Log.d(TAG, "targetY 预测结果，上方边界即将越界，强制纠正为0 ");
-//                    targetY = 0;
-//                } else if (targetY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
-//                    targetY = canScrollY;
-//                    Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
-//                } else {
-//                    Log.d(TAG, "正常范围内滑动，不做特殊处理");
-//                }
-//                scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
-
-                //*******************  使用Scroller去滑动，支持惯性，和速度侦测  ********************
-
-                //这个是没有平滑移动以及惯性效果的scrolTo，现在我换成
-                mScroller.startScroll(0, mScroller.getFinalY(), 0, -deltaY);//从哪到哪！Y 要从哪到哪呢？
-                // 手指上滑，内容也会上滑，这时候的deltaY应该是负数, 而scrollTo上滑的时候，targetY是小于startY的,scrollTo滑动的是内容，但是
-                //这个mScroller它是滑动的内容，所以不能用原值，要用相反数,艹，我就知道这里比较坑
-
-                invalidate();//刷新，会触发我的 draw,draw中执行了computeScroll
-
+                oldScrollTo(deltaY);
                 touchY = thisY;//更新Y
                 break;
             case MotionEvent.ACTION_UP:
+                if (mVelocityTracker != null) {
+                    //在up，手指抬起的时候，才根据滑动速度来进行惯性滑动
+                    mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
+                    //获得y上的速度
+                    float velocityY = mVelocityTracker.getYVelocity();
+                    if (Math.abs(velocityY) > mMinimumVelocity) {//比较滑动的最小速度
+                        //如果那就要根据速度再多滑动一段距离啦
+                        //其实是用了一个Runnable ,post（runnable）,逻辑全在runnable里面呀！
+                        int curY = getScrollY();
+                        if (canScrollY > 0) {
+                            mFlingRunnable.start(curY, (int) velocityY, curY, canScrollY);
+                        }
+
+                    }
+                    if (mVelocityTracker != null) {
+                        mVelocityTracker.recycle();
+                        mVelocityTracker = null;
+                    }
+                }
+                break;
             case MotionEvent.ACTION_CANCEL:
                 break;
         }
@@ -176,24 +186,21 @@ public class MyFlowLayout extends ViewGroup {
         return super.onTouchEvent(e);
     }
 
-    @Override
-    public void computeScroll() {
-        super.computeScroll();
-        if (mScroller.computeScrollOffset()) {//计算是否还有滑动偏移量,  true  有， false 没有
-            int currY = mScroller.getCurrY();//本次微分滑动的目标位置
-            if (currY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
-                Log.d(TAG, "targetY 预测结果，上方边界即将越界，强制纠正为0 ");
-                currY = 0;
-            } else if (currY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
-                currY = canScrollY;
-                Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
-            } else {
-                Log.d(TAG, "正常范围内滑动，不做特殊处理");
-            }
-
-            scrollTo(0, currY);
-            postInvalidate();// 利用handler，将本次刷新加入到事件序列，依次执行
+    @Deprecated
+    private void oldScrollTo(int deltaY) {
+        // *********** 使用scrollTo直接滑动 不带惯性，不带速度侦测 **************
+        //  预测scrollBy之后的getScrollY值,并且进行边界矫正
+        int targetY = getScrollY() - deltaY;// 预测已滑动的距离
+        if (targetY < 0) {//如果此次move，预测目标小于0，那么强制纠正为0
+            Log.d(TAG, "targetY 预测结果，上方边界即将越界，强制纠正为0 ");
+            targetY = 0;
+        } else if (targetY > canScrollY) {//如果此次move，预测目标大于最大值，那就等于最大值
+            targetY = canScrollY;
+            Log.d(TAG, "targetY 预测结果，下方边界即将越界，强制纠正为最大可滑动的距离 canScrollY=" + canScrollY);
+        } else {
+            Log.d(TAG, "正常范围内滑动，不做特殊处理");
         }
+        scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
     }
 
     /**
@@ -450,5 +457,103 @@ public class MyFlowLayout extends ViewGroup {
         canScrollY = getMeasuredHeight() - parentMaxHeight;
         if (canScrollY < 0)
             canScrollY = 0;
+    }
+
+
+    //惯性滑动的核心代码
+
+    /**
+     * 滚动线程
+     */
+    private class FlingRunnable implements Runnable {
+
+        private Scroller mScroller;
+
+        private int mInitY;
+        private int mMinY;
+        private int mMaxY;
+        private int mVelocityY;
+
+        FlingRunnable(Context context) {
+            this.mScroller = new Scroller(context, null, false);
+        }
+
+        void start(int initY,
+                   int velocityY,
+                   int minY,
+                   int maxY) {
+            this.mInitY = initY;
+            this.mVelocityY = velocityY;
+            this.mMinY = minY;
+            this.mMaxY = maxY;
+
+            // 先停止上一次的滚动
+            if (!mScroller.isFinished()) {
+                mScroller.abortAnimation();
+            }
+
+            // 开始 fling
+            mScroller.fling(0, initY, 0,
+                    velocityY, 0, 0, 0, maxY);
+            post(this);
+        }
+
+        @Override
+        public void run() {
+
+            // 如果已经结束，就不再进行
+            if (!mScroller.computeScrollOffset()) {
+                return;
+            }
+
+            // 计算偏移量
+            int currY = mScroller.getCurrY();//先保存当前滚动的距离
+            int diffY = mInitY - currY;//初始位置和当前位置的差值
+
+            Log.i(TAG, "run: [currY: " + currY + "]"
+                    + "[diffY: " + diffY + "]"
+                    + "[initY: " + mInitY + "]"
+                    + "[minY: " + mMinY + "]"
+                    + "[maxY: " + mMaxY + "]"
+                    + "[velocityY: " + mVelocityY + "]"
+            );
+
+            // 用于记录是否超出边界，如果已经超出边界，则不再进行回调，即使滚动还没有完成
+            boolean isEnd = false;
+
+            if (diffY != 0) {
+
+                // 超出下边界，进行修正
+                if (getScrollY() + diffY >= canScrollY) {
+                    diffY = (canScrollY - getScrollY());
+                    isEnd = true;
+                }
+
+                // 超出左边界，进行修正
+                if (getScrollY() <= 0) {
+                    diffY = -getScrollY();
+                    isEnd = true;
+                }
+
+                if (!mScroller.isFinished()) {
+                    Log.d("FlingRunnable", "" + diffY);
+                    scrollBy(0, diffY);
+                }
+                mInitY = currY;
+            }
+
+            if (!isEnd) {
+                post(this);
+            }
+        }
+
+        /**
+         * 进行停止
+         */
+        void stop() {
+            if (!mScroller.isFinished()) {
+                mScroller.abortAnimation();
+            }
+        }
     }
 }

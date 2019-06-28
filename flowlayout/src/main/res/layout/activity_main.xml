@@ -68,98 +68,98 @@
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
         <TextView
             style="@style/flow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="正常内容" />
-
-        <TextView
-            style="@style/flow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="正常内容" />
-
-        <TextView
-            style="@style/flow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="正常内容" />
-
-        <TextView
-            style="@style/flow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="正常内容" />
-
-        <TextView
-            style="@style/flow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
             android:text="正常内容" />
 
 
