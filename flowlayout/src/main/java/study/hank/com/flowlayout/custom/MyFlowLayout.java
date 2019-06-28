@@ -24,12 +24,6 @@ import study.hank.com.flowlayout.R;
 public class MyFlowLayout extends ViewGroup {
 
     private static final String TAG = "MyFlowLayoutTag";
-    private ViewConfiguration viewConfiguration;
-    private int mMaximumVelocity, mMinimumVelocity;
-    /**
-     * 惯性滑动线程
-     */
-    private FlingRunnable mFlingRunnable;
 
     public MyFlowLayout(Context context) {
         this(context, null);
@@ -44,8 +38,21 @@ public class MyFlowLayout extends ViewGroup {
         init(context, attrs);
     }
 
+    private int defaultWidth = Utils.dp2px(200);
+    private int defaultHeight = Utils.dp2px(100);
+
+    private int finalW = 0, finalH = 0;//自身宽高，最终会setMeasureDimension保存起来
+    private int parentMaxHeight;
+
+    private int currentRowWidth;// 临时变量，当前行的宽度，用于辅助计算我的宽度
+    private int currentRowHeight = 0;//临时变量，当前行的高度
+
+    //用二维数组保存每行每列上的子view
+    List<View> currentRowViews;//临时保存行
+    List<List<View>> totalViews;//保存 行*列
+    List<Integer> rowHeights;//保存行高
+
     private int gravity;
-    private VelocityTracker mVelocityTracker = null;//速度追踪器
 
     private void init(Context context, AttributeSet attrs) {
         //获取自定义属性
@@ -67,21 +74,11 @@ public class MyFlowLayout extends ViewGroup {
         mFlingRunnable = new FlingRunnable(context);
     }
 
-    private int defaultWidth = Utils.dp2px(200);
-    private int defaultHeight = Utils.dp2px(100);
 
-    private int finalW = 0, finalH = 0;//自身宽高，最终会setMeasureDimension保存起来
-    private int parentMaxHeight;
-
-    private int currentRowWidth;// 临时变量，当前行的宽度，用于辅助计算我的宽度
-    private int currentRowHeight = 0;//临时变量，当前行的高度
-
-
-    //用二维数组保存每行每列上的子view
-    List<View> currentRowViews;//临时保存行
-    List<List<View>> totalViews;//保存 行*列
-    List<Integer> rowHeights;//保存行高
-
+    /**
+     * 重置参数
+     * 测量之前，必须重置，因为测量会有多次
+     */
     private void resetParams() {
         currentRowViews = new ArrayList<>();//临时保存行
         totalViews = new ArrayList<>();//保存行*列
@@ -90,14 +87,20 @@ public class MyFlowLayout extends ViewGroup {
         finalH = 0;
     }
 
+    /**
+     * 为了让child.getLayoutParam返回MarginLayoutParam，必须重写这个
+     *
+     * @param attrs
+     * @return
+     */
     @Override
     public LayoutParams generateLayoutParams(AttributeSet attrs) {
         return new MarginLayoutParams(getContext(), attrs);
     }
 
-    int mTouchSlop = 0;
-    int mLastInterceptX = 0;
-    int mLastInterceptY = 0;
+    private int mTouchSlop = 0;//系统支持的最小滑动距离
+    private int mLastInterceptX = 0;
+    private int mLastInterceptY = 0;
 
     /**
      * 目标：所有纵向滑动由我自己处理。down不拦截，
@@ -136,8 +139,6 @@ public class MyFlowLayout extends ViewGroup {
     }
 
     int touchY;
-    private MotionEvent mMoveDownEvent;
-
 
     //滑动事件处理
     @Override
@@ -155,29 +156,11 @@ public class MyFlowLayout extends ViewGroup {
                 final int thisY = (int) e.getY();//本次event的Y值
                 //假设此次是手指向上滑动，那么y-thisY 是正数
                 int deltaY = thisY - touchY;//差值 就是即将scrollBy的距离
-                oldScrollTo(deltaY);
+                yScrollTo(deltaY);
                 touchY = thisY;//更新Y
                 break;
             case MotionEvent.ACTION_UP:
-                if (mVelocityTracker != null) {
-                    //在up，手指抬起的时候，才根据滑动速度来进行惯性滑动
-                    mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
-                    //获得y上的速度
-                    float velocityY = mVelocityTracker.getYVelocity();
-                    if (Math.abs(velocityY) > mMinimumVelocity) {//比较滑动的最小速度
-                        //如果那就要根据速度再多滑动一段距离啦
-                        //其实是用了一个Runnable ,post（runnable）,逻辑全在runnable里面呀！
-                        int curY = getScrollY();
-                        if (canScrollY > 0) {
-                            mFlingRunnable.start(curY, (int) velocityY, curY, canScrollY);
-                        }
-
-                    }
-                    if (mVelocityTracker != null) {
-                        mVelocityTracker.recycle();
-                        mVelocityTracker = null;
-                    }
-                }
+                dealActionUp();
                 break;
             case MotionEvent.ACTION_CANCEL:
                 break;
@@ -186,8 +169,13 @@ public class MyFlowLayout extends ViewGroup {
         return super.onTouchEvent(e);
     }
 
-    @Deprecated
-    private void oldScrollTo(int deltaY) {
+
+    /**
+     * y方向上的滚动
+     *
+     * @param deltaY
+     */
+    private void yScrollTo(int deltaY) {
         // *********** 使用scrollTo直接滑动 不带惯性，不带速度侦测 **************
         //  预测scrollBy之后的getScrollY值,并且进行边界矫正
         int targetY = getScrollY() - deltaY;// 预测已滑动的距离
@@ -300,18 +288,15 @@ public class MyFlowLayout extends ViewGroup {
         if (finalW == paddingLeft + paddingRight + maxChildLeftRightMargin)
             finalW = defaultWidth + paddingLeft + paddingRight;
 
-        reMeasureChildren(widthMeasureSpec, heightMeasureSpec, widthSize);
+        reMeasureChildren(widthMeasureSpec, heightMeasureSpec);
         setMeasuredDimension(finalW, finalH);//
         initCanScrollY();//测量完成之后，Y方向能够滑动的最大距离也就确定了
     }
 
     /**
      * 重新测量，针对出现宽高为match_parent的情况(因为上面的测量，没有对类进行处理)
-     *
-     * @param heightMeasureSpec
-     * @param widthSize
      */
-    private void reMeasureChildren(int widthMeasureSpec, int heightMeasureSpec, int widthSize) {
+    private void reMeasureChildren(int widthMeasureSpec, int heightMeasureSpec) {
         for (int i = 0; i < totalViews.size(); i++) {
             List<View> currentRow = totalViews.get(i);
             Log.d("currentRowTag", "第" + i + "行:" + currentRow.size());
@@ -366,10 +351,13 @@ public class MyFlowLayout extends ViewGroup {
             finalH += currentRowHeight;// 对行高进行累加
         }
         Log.d("saveCurrentRow", finalH + "    " + currentRowHeight);
-        resetTempFields();
+        resetCurRow();
     }
 
-    private void resetTempFields() {
+    /**
+     *
+     */
+    private void resetCurRow() {
         currentRowViews = new ArrayList<>();//当前行重置
         currentRowWidth = 0;//当前行宽度重置
         currentRowHeight = 0;
@@ -450,17 +438,23 @@ public class MyFlowLayout extends ViewGroup {
 
     }
 
-
     private int canScrollY;// 允许滑动的最大距离
 
+    /**
+     * 允许滑动的最大距离初始化
+     */
     private void initCanScrollY() {
         canScrollY = getMeasuredHeight() - parentMaxHeight;
-        if (canScrollY < 0)
+        if (canScrollY < 0)//不允许越界
             canScrollY = 0;
     }
 
 
-    //惯性滑动的核心代码
+    //***************** 惯性滑动的核心代码 *****************************
+    private ViewConfiguration viewConfiguration;
+    private int mMaximumVelocity, mMinimumVelocity;
+    private FlingRunnable mFlingRunnable;//惯性滑动线程
+    private VelocityTracker mVelocityTracker = null;//速度追踪器
 
     /**
      * 滚动线程
@@ -553,6 +547,31 @@ public class MyFlowLayout extends ViewGroup {
         void stop() {
             if (!mScroller.isFinished()) {
                 mScroller.abortAnimation();
+            }
+        }
+    }
+
+    /**
+     * 处理惯性滑动，要在actionUp时执行
+     */
+    private void dealActionUp() {
+        if (mVelocityTracker != null) {
+            //在up，手指抬起的时候，才根据滑动速度来进行惯性滑动
+            mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
+            //获得y上的速度
+            float velocityY = mVelocityTracker.getYVelocity();
+            if (Math.abs(velocityY) > mMinimumVelocity) {//比较滑动的最小速度
+                //如果那就要根据速度再多滑动一段距离啦
+                //其实是用了一个Runnable ,post（runnable）,逻辑全在runnable里面呀！
+                int curY = getScrollY();
+                if (canScrollY > 0) {
+                    mFlingRunnable.start(curY, (int) velocityY, curY, canScrollY);
+                }
+
+            }
+            if (mVelocityTracker != null) {
+                mVelocityTracker.recycle();
+                mVelocityTracker = null;
             }
         }
     }
