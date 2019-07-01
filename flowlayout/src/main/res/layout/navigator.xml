@@ -19,4 +19,11 @@
         android:layout_height="wrap_content"
         android:text="很少内容，不能滑动" />
 
+    <Button
+        android:id="@+id/btn_scrollview"
+        style="@style/navigator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="scrollView对比测试" />
+
 </LinearLayout>

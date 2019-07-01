@@ -1,12 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
+
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
+
     compileSdkVersion 28
 
 
     defaultConfig {
         applicationId "study.hank.com.flowlayout"
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"

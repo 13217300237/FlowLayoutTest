@@ -11,6 +11,7 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.LinearInterpolator;
 import android.widget.Scroller;
 
 import java.util.ArrayList;
@@ -72,6 +73,8 @@ public class MyFlowLayout extends ViewGroup {
         mMaximumVelocity = ViewConfiguration.get(context).getScaledMaximumFlingVelocity();
         mMinimumVelocity = ViewConfiguration.get(context).getScaledMinimumFlingVelocity();
         mFlingRunnable = new FlingRunnable(context);
+
+        dampingScroller = new Scroller(context, new LinearInterpolator());//阻尼scroller
     }
 
 
@@ -156,11 +159,24 @@ public class MyFlowLayout extends ViewGroup {
                 final int thisY = (int) e.getY();//本次event的Y值
                 //假设此次是手指向上滑动，那么y-thisY 是正数
                 int deltaY = thisY - touchY;//差值 就是即将scrollBy的距离
-                yScrollTo(deltaY);
+                yScroll(deltaY);
+//                yScrollWithElasticity(deltaY);
                 touchY = thisY;//更新Y
                 break;
             case MotionEvent.ACTION_UP:
-                dealActionUp();
+                // 分情况处理惯性滑动的问题
+                final int scrolledY = getScrollY();
+                if (scrolledY > 0 && scrolledY < canScrollY)//在范围内滑动
+                    dealActionUp();//up事件由惯性处理的方法处理
+                else if (scrolledY < 0) {//超越了上边界
+                    //则回弹
+//                    currentOverDistance  如何让他回弹呢？还是要用到Scroller，哎
+                    dampingScroller.startScroll(0, currentOverDistance, 0, -currentOverDistance);//设置scroller参数
+                    Log.d("computeScroll", "==============\n" + "start:currentOverDistance=" + currentOverDistance);
+                    invalidate();//刷新，触发computeScroll方法
+                } else {//超越了下边界
+                    //则回弹
+                }
                 break;
             case MotionEvent.ACTION_CANCEL:
                 break;
@@ -169,13 +185,29 @@ public class MyFlowLayout extends ViewGroup {
         return super.onTouchEvent(e);
     }
 
+    private Scroller dampingScroller;
+
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+        if (dampingScroller.computeScrollOffset()) {//看来scroller可以存在多份
+            final int curY = dampingScroller.getCurrY();
+            scrollTo(0, curY);
+            Log.d("computeScroll", "curY:" + curY);
+            postInvalidate();
+        } else {
+            currentOverDistance = 0;//平滑滚动完毕之后，越界值归零
+            Log.d("currentOverDistance", "currentOverDistance归零");
+        }
+
+    }
 
     /**
      * y方向上的滚动
      *
      * @param deltaY
      */
-    private void yScrollTo(int deltaY) {
+    private void yScroll(int deltaY) {
         // *********** 使用scrollTo直接滑动 不带惯性，不带速度侦测 **************
         //  预测scrollBy之后的getScrollY值,并且进行边界矫正
         int targetY = getScrollY() - deltaY;// 预测已滑动的距离
@@ -188,6 +220,33 @@ public class MyFlowLayout extends ViewGroup {
         } else {
             Log.d(TAG, "正常范围内滑动，不做特殊处理");
         }
+        scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
+    }
+
+    int allowOverMaxDistance = 100;// 上下边界允许越界的最大距离 100px
+    int currentOverDistance = 0;//当前已经越界的距离
+
+    /**
+     * y方向上的滚动
+     *
+     * @param deltaY
+     */
+    private void yScrollWithElasticity(int deltaY) {
+        // *********** 使用scrollTo直接滑动 不带惯性，不带速度侦测 **************
+        //  预测scrollBy之后的getScrollY值,并且进行边界矫正
+        int targetY = getScrollY() - deltaY;// 预测已滑动的距离
+        if (targetY < 0) {//上面越界
+            //保存越界值
+            currentOverDistance += -deltaY;//保存正值
+            // 计算阻尼系数 y = 1/x (y是阻尼系数，x是滑动距离,这个系数值应该是0~1)
+            // 滑动距离x越大，阻尼系数值越小，阻力越大，所以阻尼系数直接定位这个值就行了
+            float zn = 1.0f / currentOverDistance;
+            Log.d("currentOverDistance", "已经越界" + currentOverDistance + "，zn=" + zn + "；(zn * deltaY)=" + (zn * deltaY));
+            //先用最大越界值来矫正
+            // 当前还允许越界的剩余高度
+            targetY = (int) (getScrollY() - deltaY);
+        }
+
         scrollTo(0, targetY);//这里的delta 是正数，内容会上移,scroll完了之后，getScrollY会是正值
     }
 
@@ -540,7 +599,7 @@ public class MyFlowLayout extends ViewGroup {
                     isEnd = true;
                 }
 
-                // 超出左边界，进行修正
+                // 超出上边界，进行修正
                 if (getScrollY() <= 0) {
                     diffY = -getScrollY();
                     isEnd = true;

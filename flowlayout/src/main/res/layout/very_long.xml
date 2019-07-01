@@ -10,24 +10,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
+        android:clickable="true"
+        android:focusable="false"
         android:gravity="top"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="宽高都wrap_content" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="宽高都wrap_content" />
 
         <!--  为什么我的宽度是wrap_content，你也要沾满一整行 -->
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -35,135 +37,135 @@
             android:ems="9"
             android:text="宽wrap_content，高match_parent，高会设置一个默认值" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="宽高都wrap_content" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:text="高50dp，宽matchParent" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="宽 match_Parent, 高 wrap_content" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:text="宽高都是 match_Parent(宽给最终行宽，高给默认值)" />
 
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="wrap_content"
             android:layout_height="100dp"
             android:text="高200dp，宽wrapContent" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="正常内容" />
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="match_parent"
             android:layout_height="500dp"
             android:text="正常内容" />
 
 
-        <TextView
+        <Button
             style="@style/flow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

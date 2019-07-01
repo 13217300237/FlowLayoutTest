@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ScrollViewWithBtnActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/v_tag"
+                android:layout_width="300dp"
+                android:layout_height="50dp"
+                android:background="@color/colorPrimary"
+                android:layout_margin="10dp"/>
+
+            <Button
+                style="@style/flow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="宽高都wrap_content" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="高50dp，宽matchParent" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="宽 match_Parent, 高 wrap_content" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="宽高都是 match_Parent(宽给最终行宽，高给默认值)" />
+
+
+            <Button
+                style="@style/flow"
+                android:layout_width="wrap_content"
+                android:layout_height="100dp"
+                android:text="高200dp，宽wrapContent" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="正常内容" />
+
+            <Button
+                style="@style/flow"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:text="正常内容" />
+
+
+            <Button
+                style="@style/flow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="我是最后一个, 宽高是wrap_content" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</android.support.constraint.ConstraintLayout>
