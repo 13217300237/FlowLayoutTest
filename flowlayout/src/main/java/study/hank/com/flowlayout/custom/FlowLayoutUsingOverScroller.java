@@ -146,7 +146,7 @@ public class FlowLayoutUsingOverScroller extends BaseFlowLayout {
             int bottom = finalH;
 
             mScroller.fling(getScrollX(), getScrollY(), 0, velocityY, 0, 0, 0,
-                    Math.max(0, bottom - height), 0, height / 2);
+                    Math.max(0, bottom - height), 0, height / 5);
 
             postInvalidateOnAnimation();
         }
