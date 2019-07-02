@@ -224,12 +224,11 @@ public class FlowLayoutUsingPropertyAnimator extends BaseFlowLayout {
             mVelocityTracker.computeCurrentVelocity(1000, mMaximumVelocity);
             float velocityY = mVelocityTracker.getYVelocity();//获得y上的速度
             if (Math.abs(velocityY) > mMinimumVelocity) {//大于最小滑动速度，才让你惯性
-                int curY = getScrollY();
                 if (canScrollY > 0) {//只有能够滑动，才执行下面的
                     Log.d("velocityY", "" + velocityY);
                     //这里使用属性动画进行滚动，对比之前的方案，入参是：速度 ，只有速度。。然后惯性滑动多少，应该是由速度决定的.
                     // 先做简单的，如果速度满足最低限制，就滑动固定距离,并且手指再次down，则停止动画
-                    moveUsingPropertyAnimator(velocityY / 3);
+                    moveUsingPropertyAnimator(velocityY / 2);
                 }
 
             }
