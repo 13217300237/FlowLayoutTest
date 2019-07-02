@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
+import android.widget.Toast;
 
 import study.hank.com.flowlayout.custom.base.BaseFlowLayout;
 
@@ -22,6 +23,8 @@ import study.hank.com.flowlayout.custom.base.BaseFlowLayout;
  * 真正去平移，还是要用到scrollTo或者scrollBy.
  * <p>
  * 那么属性动画，其实自带了平移方法 TranslationAnimator
+ * <p>
+ * 记录一个坑：由于Move事件很特殊，它记录的是一次move的偏移量（一个down/move/up 有多个move），这一次move的长度
  */
 public class FlowLayoutUsingPropertyAnimator extends BaseFlowLayout {
 
@@ -138,9 +141,7 @@ public class FlowLayoutUsingPropertyAnimator extends BaseFlowLayout {
         if (Math.abs(deltaY) > mTouchSlop) {
             float targetY = getTranslationY() + deltaY;// 预测已滑动的距离
             Log.d("getTranslationY", getTranslationY() + "");
-            if (judgeOverEdge(targetY))
-                return;
-            setTranslationY(targetY);//这里的translationY 到底是什么含义。 从现象上来看，它兼容了内部的画布滚动。
+            scroll_(targetY);
         }
     }
 
@@ -150,10 +151,24 @@ public class FlowLayoutUsingPropertyAnimator extends BaseFlowLayout {
      * @param targetY
      * @return
      */
-    private boolean judgeOverEdge(float targetY) {
-        if (targetY > 0) return true;// 上边越界
-        if (Math.abs(targetY) > canScrollY) return true;//下边越界
-        return false;
+    private void scroll_(float targetY) {
+        float y = targetY;
+        if (targetY > 0) {
+            stopAnimator();
+            Toast.makeText(getContext(), "上边越界 ``", Toast.LENGTH_SHORT).show();
+            y = 0;
+        }// 上边越界
+        if (Math.abs(targetY) > canScrollY) {
+            stopAnimator();
+            Toast.makeText(getContext(), "下边越界 ```````", Toast.LENGTH_SHORT).show();
+            y = -canScrollY;
+        }//下边越界
+        setTranslationY(y);
+    }
+
+    private void stopAnimator() {
+        if (flingAnimator != null)
+            flingAnimator.cancel();
     }
 
     private boolean ifAnimating = false;
@@ -177,8 +192,8 @@ public class FlowLayoutUsingPropertyAnimator extends BaseFlowLayout {
         flingAnimator.setDuration(500);
         flingAnimator.addUpdateListener(animation -> {
             float curY = (float) animation.getAnimatedValue();
-            if (judgeOverEdge(curY)) return;
-            setTranslationY(curY); // 这个东西的意义，我好像有点不明白
+            scroll_(curY);
+            // 这个东西的意义，我好像有点不明白
             Log.d("scrollYTag", "" + getTranslationY());
         });
 
@@ -214,7 +229,7 @@ public class FlowLayoutUsingPropertyAnimator extends BaseFlowLayout {
                     Log.d("velocityY", "" + velocityY);
                     //这里使用属性动画进行滚动，对比之前的方案，入参是：速度 ，只有速度。。然后惯性滑动多少，应该是由速度决定的.
                     // 先做简单的，如果速度满足最低限制，就滑动固定距离,并且手指再次down，则停止动画
-                    moveUsingPropertyAnimator(velocityY / 5);
+                    moveUsingPropertyAnimator(velocityY / 3);
                 }
 
             }
