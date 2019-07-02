@@ -26,6 +26,9 @@
             android:name=".activity.VeryLongActivity2"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".activity.VeryLongActivity3"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".activity.NormalActivity"
             android:screenOrientation="portrait" />
     </application>

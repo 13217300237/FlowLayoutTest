@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp"
+    tools:context=".activity.MainActivity">
+
+    <Button
+        android:id="@+id/btnUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/colorB"
+        android:text="向上滚"
+        android:textColor="@color/colorF"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnDown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:background="@color/colorB"
+        android:text="向下滚"
+        android:textColor="@color/colorF"
+        app:layout_constraintLeft_toRightOf="@id/btnUp"
+        app:layout_constraintTop_toTopOf="@id/btnUp" />
+
+    <Button
+        android:id="@+id/btnReset0"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:background="@color/colorB"
+        android:text="位置归零"
+        android:textColor="@color/colorF"
+        app:layout_constraintLeft_toRightOf="@id/btnDown"
+        app:layout_constraintTop_toTopOf="@id/btnUp" />
+
+    <study.hank.com.flowlayout.custom.FlowLayoutUsingPropertyAnimator
+        android:id="@+id/main"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:clickable="true"
+        android:focusable="false"
+        android:gravity="top"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="我是开始，宽高都wrap_content" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="宽高都wrap_content" />
+
+        <!--  为什么我的宽度是wrap_content，你也要沾满一整行 -->
+        <TextView
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_round2"
+            android:ems="9"
+            android:text="宽wrap_content，高match_parent，高会设置一个默认值" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="宽高都wrap_content" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="高50dp，宽matchParent" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="宽 match_Parent, 高 wrap_content" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="宽高都是 match_Parent(宽给最终行宽，高给默认值)" />
+
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="100dp"
+            android:text="高200dp，宽wrapContent" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="正常内容" />
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"
+            android:text="最后一个正常内容" />
+
+
+        <TextView
+            style="@style/flow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="我是最后一个, 宽高是wrap_content" />
+    </study.hank.com.flowlayout.custom.FlowLayoutUsingPropertyAnimator>
+</android.support.constraint.ConstraintLayout>

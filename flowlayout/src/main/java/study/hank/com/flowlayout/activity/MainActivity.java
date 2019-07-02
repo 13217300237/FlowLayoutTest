@@ -23,6 +23,11 @@ public class MainActivity extends AppCompatActivity {
             startActivity(i);
         });
 
+        findViewById(R.id.btn_long_content3).setOnClickListener(v -> {
+            Intent i = new Intent(MainActivity.this, VeryLongActivity3.class);
+            startActivity(i);
+        });
+
         findViewById(R.id.btn_nromal_content).setOnClickListener(v -> {
             Intent i = new Intent(MainActivity.this, NormalActivity.class);
             startActivity(i);
