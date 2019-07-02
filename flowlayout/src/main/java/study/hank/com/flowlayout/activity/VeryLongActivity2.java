@@ -1,13 +1,15 @@
-package study.hank.com.flowlayout;
+package study.hank.com.flowlayout.activity;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
-public class NormalActivity extends AppCompatActivity {
+import study.hank.com.flowlayout.R;
+
+public class VeryLongActivity2 extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.normal);
+        setContentView(R.layout.very_long2);
     }
 }

@@ -8,21 +8,28 @@
     <Button
         android:id="@+id/btn_long_content"
         style="@style/navigator"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="很多内容,支持滑动" />
 
     <Button
+        android:id="@+id/btn_long_content2"
+        style="@style/navigator"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="很多内容,支持滑动,边界回弹" />
+
+    <Button
         android:id="@+id/btn_nromal_content"
         style="@style/navigator"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="很少内容，不能滑动" />
 
     <Button
         android:id="@+id/btn_scrollview"
         style="@style/navigator"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="scrollView对比测试" />
 

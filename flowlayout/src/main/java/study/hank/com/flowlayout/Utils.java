@@ -1,4 +1,4 @@
-package study.hank.com.flowlayout.custom;
+package study.hank.com.flowlayout;
 
 import android.content.res.Resources;
 import android.util.TypedValue;

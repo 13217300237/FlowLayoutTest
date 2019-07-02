@@ -7,7 +7,7 @@
     android:padding="10dp"
     tools:context=".activity.MainActivity">
 
-    <study.hank.com.flowlayout.custom.FlowLayoutSupportScroll
+    <study.hank.com.flowlayout.custom.FlowLayoutUsingOverScroller
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
@@ -171,5 +171,5 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="我是最后一个, 宽高是wrap_content" />
-    </study.hank.com.flowlayout.custom.FlowLayoutSupportScroll>
+    </study.hank.com.flowlayout.custom.FlowLayoutUsingOverScroller>
 </android.support.constraint.ConstraintLayout>

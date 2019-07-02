@@ -1,7 +1,9 @@
-package study.hank.com.flowlayout;
+package study.hank.com.flowlayout.activity;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+
+import study.hank.com.flowlayout.R;
 
 public class VeryLongActivity extends AppCompatActivity {
 

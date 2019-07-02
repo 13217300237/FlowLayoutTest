@@ -1,9 +1,11 @@
-package study.hank.com.flowlayout;
+package study.hank.com.flowlayout.activity;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+
+import study.hank.com.flowlayout.R;
 
 public class ScrollViewWithBtnActivity extends AppCompatActivity {
 
